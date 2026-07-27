@@ -145,6 +145,17 @@ function initBinauralStudio() {
     });
   }
 
+  const realRainSlider = document.getElementById("real-rain-vol-slider");
+  const realRainVal = document.getElementById("real-rain-vol-val");
+
+  if (realRainSlider) {
+    realRainSlider.addEventListener("input", () => {
+      const volPercent = realRainSlider.value;
+      if (realRainVal) realRainVal.textContent = volPercent;
+      binaural.setRealRainVolume(volPercent / 100);
+    });
+  }
+
   // Master Volume
   if (masterVolSlider) {
     masterVolSlider.addEventListener("input", () => {

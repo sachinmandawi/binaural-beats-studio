@@ -1,5 +1,5 @@
 /**
- * Binaural Beats Studio - Real-Time Web Audio API Synthesizer
+ * Binaural Beats Studio - Real-Time Web Audio API Synthesizer with Real Rain MP3
  */
 
 export class BinauralEngine {
@@ -23,6 +23,12 @@ export class BinauralEngine {
     this.pinkSource = null;
     this.brownSource = null;
 
+    // Real Rain MP3 Integration
+    this.rainAudioEl = null;
+    this.rainSourceNode = null;
+    this.rainGain = null;
+    this.realRainVol = 0.5; // Default 50%
+
     // Audio Parameters
     this.carrierFreq = 200; // Hz
     this.beatFreq = 10;     // Hz (Alpha default)
@@ -32,6 +38,16 @@ export class BinauralEngine {
     // Session Timer
     this.timerInterval = null;
     this.timerSecondsRemaining = 0;
+
+    this.initRealRainElement();
+  }
+
+  initRealRainElement() {
+    if (!this.rainAudioEl) {
+      this.rainAudioEl = new Audio("audio/rain.mp3");
+      this.rainAudioEl.loop = true;
+      this.rainAudioEl.crossOrigin = "anonymous";
+    }
   }
 
   initContext() {
@@ -91,10 +107,37 @@ export class BinauralEngine {
     this.oscLeft.start(now);
     this.oscRight.start(now);
 
-    // Setup Ambient Rain & Ocean Layers
+    // Setup Synthetic Ambient Rain & Ocean Layers
     this.setupAmbientNoise();
 
+    // Connect Real Rain MP3 to Web Audio Graph
+    this.setupRealRainNode();
+
     this.isPlaying = true;
+  }
+
+  setupRealRainNode() {
+    if (!this.audioCtx || !this.rainAudioEl) return;
+
+    if (!this.rainSourceNode) {
+      try {
+        this.rainSourceNode = this.audioCtx.createMediaElementSource(this.rainAudioEl);
+      } catch (e) {
+        // Node already created on media element
+      }
+    }
+
+    this.rainGain = this.audioCtx.createGain();
+    this.rainGain.gain.value = this.realRainVol;
+
+    if (this.rainSourceNode) {
+      this.rainSourceNode.connect(this.rainGain);
+      this.rainGain.connect(this.masterGain);
+    }
+
+    this.rainAudioEl.play().catch((err) => {
+      console.log("Audio play interaction required:", err);
+    });
   }
 
   stop() {
@@ -103,6 +146,10 @@ export class BinauralEngine {
     const now = this.audioCtx ? this.audioCtx.currentTime : 0;
     if (this.masterGain && this.audioCtx) {
       this.masterGain.gain.linearRampToValueAtTime(0.001, now + 0.1);
+    }
+
+    if (this.rainAudioEl) {
+      this.rainAudioEl.pause();
     }
 
     setTimeout(() => {
@@ -137,6 +184,13 @@ export class BinauralEngine {
     }
   }
 
+  setRealRainVolume(vol) {
+    this.realRainVol = parseFloat(vol) || 0;
+    if (this.rainGain) {
+      this.rainGain.gain.value = this.realRainVol;
+    }
+  }
+
   setWaveform(type) {
     this.waveform = type;
     if (this.isPlaying && this.oscLeft && this.oscRight) {
@@ -150,7 +204,7 @@ export class BinauralEngine {
 
     const bufferSize = 2 * this.audioCtx.sampleRate;
 
-    // Pink Noise Buffer (Soft Rain)
+    // Pink Noise Buffer
     const pinkBuffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
     const pData = pinkBuffer.getChannelData(0);
     let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
@@ -175,7 +229,7 @@ export class BinauralEngine {
     this.pinkGain.connect(this.masterGain);
     this.pinkSource.start();
 
-    // Brown Noise Buffer (Deep Ocean Waves)
+    // Brown Noise Buffer
     const brownBuffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
     const brData = brownBuffer.getChannelData(0);
     let lastOut = 0.0;
