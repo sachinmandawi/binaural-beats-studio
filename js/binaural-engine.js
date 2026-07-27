@@ -1,5 +1,5 @@
 /**
- * Binaural Beats Studio - Real-Time Web Audio API Synthesizer with Real Rain & Birds MP3
+ * Binaural Beats Studio - Real-Time Web Audio API Synthesizer with Real Rain, Birds & Thunder MP3
  */
 
 export class BinauralEngine {
@@ -33,7 +33,13 @@ export class BinauralEngine {
     this.birdsAudioEl = null;
     this.birdsSourceNode = null;
     this.birdsGain = null;
-    this.birdsVol = 0.3; // Default 30%
+    this.birdsVol = 0.3;
+
+    // Thunderstorm MP3 Integration
+    this.thunderAudioEl = null;
+    this.thunderSourceNode = null;
+    this.thunderGain = null;
+    this.thunderVol = 0.4; // Default 40%
 
     // Audio Parameters
     this.carrierFreq = 200; // Hz
@@ -59,6 +65,12 @@ export class BinauralEngine {
       this.birdsAudioEl = new Audio("audio/birds.mp3");
       this.birdsAudioEl.loop = true;
       this.birdsAudioEl.crossOrigin = "anonymous";
+    }
+
+    if (!this.thunderAudioEl) {
+      this.thunderAudioEl = new Audio("audio/thunder.mp3");
+      this.thunderAudioEl.loop = true;
+      this.thunderAudioEl.crossOrigin = "anonymous";
     }
   }
 
@@ -164,6 +176,23 @@ export class BinauralEngine {
       }
       this.birdsAudioEl.play().catch(() => {});
     }
+
+    // Thunderstorm Node
+    if (this.thunderAudioEl) {
+      if (!this.thunderSourceNode) {
+        try {
+          this.thunderSourceNode = this.audioCtx.createMediaElementSource(this.thunderAudioEl);
+        } catch (e) {}
+      }
+      this.thunderGain = this.audioCtx.createGain();
+      this.thunderGain.gain.value = this.thunderVol;
+
+      if (this.thunderSourceNode) {
+        this.thunderSourceNode.connect(this.thunderGain);
+        this.thunderGain.connect(this.masterGain);
+      }
+      this.thunderAudioEl.play().catch(() => {});
+    }
   }
 
   stop() {
@@ -176,6 +205,7 @@ export class BinauralEngine {
 
     if (this.rainAudioEl) this.rainAudioEl.pause();
     if (this.birdsAudioEl) this.birdsAudioEl.pause();
+    if (this.thunderAudioEl) this.thunderAudioEl.pause();
 
     setTimeout(() => {
       try {
@@ -220,6 +250,13 @@ export class BinauralEngine {
     this.birdsVol = parseFloat(vol) || 0;
     if (this.birdsGain) {
       this.birdsGain.gain.value = this.birdsVol;
+    }
+  }
+
+  setThunderVolume(vol) {
+    this.thunderVol = parseFloat(vol) || 0;
+    if (this.thunderGain) {
+      this.thunderGain.gain.value = this.thunderVol;
     }
   }
 

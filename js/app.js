@@ -167,6 +167,17 @@ function initBinauralStudio() {
     });
   }
 
+  const thunderSlider = document.getElementById("thunder-vol-slider");
+  const thunderVal = document.getElementById("thunder-vol-val");
+
+  if (thunderSlider) {
+    thunderSlider.addEventListener("input", () => {
+      const volPercent = thunderSlider.value;
+      if (thunderVal) thunderVal.textContent = volPercent;
+      binaural.setThunderVolume(volPercent / 100);
+    });
+  }
+
   // Master Volume
   if (masterVolSlider) {
     masterVolSlider.addEventListener("input", () => {
