@@ -1,5 +1,5 @@
 /**
- * Binaural Beats Studio - Real-Time Web Audio API Synthesizer with Real Rain MP3
+ * Binaural Beats Studio - Real-Time Web Audio API Synthesizer with Real Rain & Birds MP3
  */
 
 export class BinauralEngine {
@@ -17,7 +17,7 @@ export class BinauralEngine {
     this.masterGain = null;
     this.analyser = null;
 
-    // Ambient Noise Generators
+    // Synthetic Ambient Noise Generators
     this.pinkGain = null;
     this.brownGain = null;
     this.pinkSource = null;
@@ -27,7 +27,13 @@ export class BinauralEngine {
     this.rainAudioEl = null;
     this.rainSourceNode = null;
     this.rainGain = null;
-    this.realRainVol = 0.5; // Default 50%
+    this.realRainVol = 0.5;
+
+    // Birds Chirping MP3 Integration
+    this.birdsAudioEl = null;
+    this.birdsSourceNode = null;
+    this.birdsGain = null;
+    this.birdsVol = 0.3; // Default 30%
 
     // Audio Parameters
     this.carrierFreq = 200; // Hz
@@ -39,14 +45,20 @@ export class BinauralEngine {
     this.timerInterval = null;
     this.timerSecondsRemaining = 0;
 
-    this.initRealRainElement();
+    this.initAudioElements();
   }
 
-  initRealRainElement() {
+  initAudioElements() {
     if (!this.rainAudioEl) {
       this.rainAudioEl = new Audio("audio/rain.mp3");
       this.rainAudioEl.loop = true;
       this.rainAudioEl.crossOrigin = "anonymous";
+    }
+
+    if (!this.birdsAudioEl) {
+      this.birdsAudioEl = new Audio("audio/birds.mp3");
+      this.birdsAudioEl.loop = true;
+      this.birdsAudioEl.crossOrigin = "anonymous";
     }
   }
 
@@ -110,34 +122,48 @@ export class BinauralEngine {
     // Setup Synthetic Ambient Rain & Ocean Layers
     this.setupAmbientNoise();
 
-    // Connect Real Rain MP3 to Web Audio Graph
-    this.setupRealRainNode();
+    // Connect Real MP3 Audio Elements to Audio Graph
+    this.setupRealAudioNodes();
 
     this.isPlaying = true;
   }
 
-  setupRealRainNode() {
-    if (!this.audioCtx || !this.rainAudioEl) return;
+  setupRealAudioNodes() {
+    if (!this.audioCtx) return;
 
-    if (!this.rainSourceNode) {
-      try {
-        this.rainSourceNode = this.audioCtx.createMediaElementSource(this.rainAudioEl);
-      } catch (e) {
-        // Node already created on media element
+    // Real Rain Node
+    if (this.rainAudioEl) {
+      if (!this.rainSourceNode) {
+        try {
+          this.rainSourceNode = this.audioCtx.createMediaElementSource(this.rainAudioEl);
+        } catch (e) {}
       }
+      this.rainGain = this.audioCtx.createGain();
+      this.rainGain.gain.value = this.realRainVol;
+
+      if (this.rainSourceNode) {
+        this.rainSourceNode.connect(this.rainGain);
+        this.rainGain.connect(this.masterGain);
+      }
+      this.rainAudioEl.play().catch(() => {});
     }
 
-    this.rainGain = this.audioCtx.createGain();
-    this.rainGain.gain.value = this.realRainVol;
+    // Birds Chirping Node
+    if (this.birdsAudioEl) {
+      if (!this.birdsSourceNode) {
+        try {
+          this.birdsSourceNode = this.audioCtx.createMediaElementSource(this.birdsAudioEl);
+        } catch (e) {}
+      }
+      this.birdsGain = this.audioCtx.createGain();
+      this.birdsGain.gain.value = this.birdsVol;
 
-    if (this.rainSourceNode) {
-      this.rainSourceNode.connect(this.rainGain);
-      this.rainGain.connect(this.masterGain);
+      if (this.birdsSourceNode) {
+        this.birdsSourceNode.connect(this.birdsGain);
+        this.birdsGain.connect(this.masterGain);
+      }
+      this.birdsAudioEl.play().catch(() => {});
     }
-
-    this.rainAudioEl.play().catch((err) => {
-      console.log("Audio play interaction required:", err);
-    });
   }
 
   stop() {
@@ -148,9 +174,8 @@ export class BinauralEngine {
       this.masterGain.gain.linearRampToValueAtTime(0.001, now + 0.1);
     }
 
-    if (this.rainAudioEl) {
-      this.rainAudioEl.pause();
-    }
+    if (this.rainAudioEl) this.rainAudioEl.pause();
+    if (this.birdsAudioEl) this.birdsAudioEl.pause();
 
     setTimeout(() => {
       try {
@@ -188,6 +213,13 @@ export class BinauralEngine {
     this.realRainVol = parseFloat(vol) || 0;
     if (this.rainGain) {
       this.rainGain.gain.value = this.realRainVol;
+    }
+  }
+
+  setBirdsVolume(vol) {
+    this.birdsVol = parseFloat(vol) || 0;
+    if (this.birdsGain) {
+      this.birdsGain.gain.value = this.birdsVol;
     }
   }
 

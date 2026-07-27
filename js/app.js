@@ -156,6 +156,17 @@ function initBinauralStudio() {
     });
   }
 
+  const birdsSlider = document.getElementById("birds-vol-slider");
+  const birdsVal = document.getElementById("birds-vol-val");
+
+  if (birdsSlider) {
+    birdsSlider.addEventListener("input", () => {
+      const volPercent = birdsSlider.value;
+      if (birdsVal) birdsVal.textContent = volPercent;
+      binaural.setBirdsVolume(volPercent / 100);
+    });
+  }
+
   // Master Volume
   if (masterVolSlider) {
     masterVolSlider.addEventListener("input", () => {
